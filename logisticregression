@@ -1,0 +1,113 @@
+import numpy as np
+import math
+"""
+Implement the Logistic Regression Classifier for binary input/output data 
+with gradient descent algorithm to estimate parameters.  
+"""
+
+
+def calc_accuracy(predictions, testing_data):
+    tests_0 = 0
+    correct_0 = 0
+    tests_1 = 0
+    correct_1 = 0
+    for i in range(len(testing_data)):
+        label = testing_data[i][-1]
+        prediction = predictions[i]
+        if label == 0:
+            tests_0 += 1
+            if label == prediction:
+                correct_0 += 1
+        if label == 1:
+            tests_1 += 1
+            if label == prediction:
+                correct_1 += 1
+    count_correct = correct_0 + correct_1
+    accuracy = count_correct / len(testing_data)
+    print('Overall Accuracy: ', accuracy)
+    print('Tested ', len(testing_data), ', correctly classified ', count_correct)
+    print('Class 0: tested', tests_0, ', correctly classified ', correct_0)
+    print('Class 1: tested', tests_1, ', correctly classified ', correct_1)
+
+
+def dot_product(a, b):
+    if len(a) != len(b):
+        return print('error')
+    product = 0
+    for i in range(len(a)):
+        product += a[i] * b[i]
+    return product
+
+
+def test_model(testing_data, thetas):
+    predictions = []
+    for instance in testing_data:
+        # removes label to make prediction
+        instance = instance[:(len(instance)-1)]
+        z = dot_product(thetas, instance)
+        p = sigmoid(z)
+        if p < 0.5:
+            prediction = 0
+        else:
+            prediction = 1
+        predictions.append(prediction)
+    return predictions
+
+
+def sigmoid(z):
+    return 1 / (1 + math.exp(-z))
+
+
+def gradient_ascent(training_data, training_steps, learning_rate):
+    """
+    Finding thetas that make the data set look likely.
+    """
+    print(training_data)
+    n_params = len(training_data[0]) - 1
+    rows = len(training_data)
+
+    # initialize all thetas
+    thetas = np.zeros(n_params)
+    for i in range(training_steps):
+        gradient = np.zeros(n_params)
+        for instance in range(rows):
+            x = training_data[instance]
+            x = x[:-1]
+            y = training_data[instance][-1]
+            for param in range(n_params):
+                parameter = training_data[instance][param]
+                gradient[param] += parameter * (y - sigmoid(dot_product(thetas, x)))
+        for param in range(n_params):
+            thetas[param] += learning_rate * gradient[param]
+    return thetas
+
+
+def csv_reader(filename):
+    """
+    Creates a list of data instances. Removes demographic data
+    and adds a data point that is always set to 1 as an intercept.
+    """
+    path = open(filename)
+    data = np.loadtxt(path, delimiter=",", dtype='str')
+    if 'Demographic' in data:
+        data = np.delete(data, -2, axis=1)
+    data = np.delete(data, 0, 0)
+    # add intercept to data 
+    intercept = np.ones((data.shape[0], 1), dtype='int')
+    data = data.astype(int)
+    data = np.concatenate((intercept, data), axis=1)
+    return data
+
+
+def main():
+    # create training and testing data from files
+    training_data = csv_reader("ancestry-train.csv")
+    testing_data = csv_reader("ancestry-test.csv")
+    # train and test model
+    thetas = gradient_ascent(training_data, 1000,  0.0001)
+    predictions = test_model(testing_data, thetas)
+    calc_accuracy(predictions, testing_data)
+
+
+if __name__ == '__main__':
+    main()
